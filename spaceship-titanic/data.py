@@ -13,7 +13,7 @@ class DataLoader:
     self.df.drop(labels=tags_to_drop, axis=1, inplace=True)
 
     self.random_state = random_state
-    
+
     if drop_na:
       self.df.dropna(inplace=True)
 
@@ -30,6 +30,47 @@ class DataLoader:
     return x_train, x_test, y_train, y_test
   
 
-  def get_unique(self, col:str) -> pd.DataFrame:
+  def get_unique(self, col:str):
     return self.df[col].unique()
+  
+
+  def get_column_names(self):
+    return self.df.columns
     
+
+
+def filter_dataset(df: pd.DataFrame) -> pd.DataFrame:
+
+  # turn age into groups
+  df["Age"] = df["Age"].apply(lambda x: round(x, -1))
+
+
+  # one hot split
+  one_hot = pd.get_dummies(df[["HomePlanet", "Destination"]])
+  df.drop(labels=["HomePlanet", "Destination"], axis=1, inplace=True)
+
+  df = df.merge(one_hot ,left_index=True, right_index=True)
+
+
+  # split passenger Id
+  df[["GroupId", "PassengerNumber"]] = df["PassengerId"].str.split("_", expand=True)
+  df.drop("PassengerId", axis=1, inplace=True)
+
+  # split cabin
+  cabin_split = df["Cabin"].str.split("/", expand=True)
+  cabin_split[["PortSide", "StarboardSide"]] = pd.get_dummies(cabin_split[2])
+  cabin_split.drop(labels=[2], inplace=True, axis=1)
+
+  cabin_split.rename(columns={"P": "PortSide", "S": "StarboardSide", 0: "Deck", 1: "CabinNumber"}, inplace=True)
+  cabin_split["Deck"] = cabin_split["Deck"].apply(lambda x: ord(x))
+
+  df = df.merge(cabin_split ,left_index=True, right_index=True).drop(labels=["Cabin"], axis=1)
+
+
+  # turn bools into nums
+  df.replace({False: 0, True: 1}, inplace=True)
+
+  # ensure everything is a number
+  df = df.astype(int)
+
+  return df

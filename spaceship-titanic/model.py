@@ -1,4 +1,5 @@
 from sklearn.neighbors import KNeighborsClassifier
+import pandas as pd
 
 class KNN:
   def __init__(self, x_train, y_train, n_neighbors=5):
@@ -13,7 +14,7 @@ class KNN:
   def score(self, x_test, y_test) -> int:
     return self.neigh_model.score(x_test, y_test)
   
-  def predict(self, x):
-    predicted = self.neigh_model.predict(x)
+  def predict(self, x, ids, label_tag):
+    predicted = pd.DataFrame({label_tag: self.neigh_model.predict(x)})
 
-    print(predicted)
+    return predicted
